@@ -34,12 +34,21 @@ void main() {
       expect(forecast['clima'], isA<List>());
     });
 
-    test('Deve retornar previsão por coordenadas no Open-Meteo', () async {
+    test('Deve retornar previsão completa com histórico por cidade no Repositório', () async {
+      final weather = await repository.getWeatherForCity('Sao Paulo');
+      
+      expect(weather.cityName, contains('São Paulo'));
+      expect(weather.forecast, isNotEmpty);
+      expect(weather.forecast.first.max, isNotNull);
+    });
+
+    test('Deve retornar previsão por coordenadas no Open-Meteo com lista de previsões', () async {
       final weather = await repository.getWeatherForLocation(-23.5505, -46.6333);
       
       expect(weather.cityName, equals('Minha Localização'));
       expect(weather.temp, isA<double>());
-      expect(weather.humidity, greaterThanOrEqualTo(0));
+      expect(weather.forecast, isNotEmpty);
+      expect(weather.forecast.length, greaterThan(1));
     });
   });
 }

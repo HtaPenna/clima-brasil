@@ -22,7 +22,6 @@ class WeatherRepositoryImpl implements WeatherRepository {
         throw Exception('Nenhuma cidade encontrada com o nome "$city".');
       }
 
-      // Filtra por preferência de correspondência exata ou simplesmente pega a primeira
       final matchedCity = cities.first;
       final int cityId = matchedCity['id'];
 
@@ -34,12 +33,22 @@ class WeatherRepositoryImpl implements WeatherRepository {
         throw Exception('Previsão indisponível no momento para esta localidade.');
       }
 
+      // Mapeia todas as previsões diárias
+      final List<ForecastDay> forecastDays = climaList.map((item) {
+        final map = Map<String, dynamic>.from(item);
+        return ForecastDay(
+          date: DateTime.tryParse(map['data'] ?? '') ?? DateTime.now(),
+          min: (map['min'] as num?)?.toDouble() ?? 0.0,
+          max: (map['max'] as num?)?.toDouble() ?? 0.0,
+          condition: _mapCptecCondition(map['condicao']),
+          uvIndex: (map['indice_uv'] as num?)?.toInt() ?? 0,
+        );
+      }).toList();
+
       // Pega o primeiro dia da previsão como clima atual aproximado
       final todayForecast = Map<String, dynamic>.from(climaList.first);
       final double tempMin = (todayForecast['min'] as num).toDouble();
       final double tempMax = (todayForecast['max'] as num).toDouble();
-      
-      // Média simples como temperatura representativa
       final double tempAverage = (tempMin + tempMax) / 2;
 
       return WeatherData(
@@ -50,9 +59,10 @@ class WeatherRepositoryImpl implements WeatherRepository {
         tempMax: tempMax,
         condition: _mapCptecCondition(todayForecast['condicao']),
         description: 'Índice UV máximo: ${todayForecast['indice_uv'] ?? "Não informado"}',
-        humidity: 60, // CPTEC previsão diária padrão
-        windSpeed: 12.0, // Vento médio representativo
+        humidity: 60,
+        windSpeed: 12.0,
         date: DateTime.tryParse(todayForecast['data'] ?? '') ?? DateTime.now(),
+        forecast: forecastDays,
       );
     } catch (e) {
       throw Exception('Falha ao buscar dados climáticos para "$city": $e');
@@ -75,6 +85,23 @@ class WeatherRepositoryImpl implements WeatherRepository {
 
       final tempMaxList = daily['temperature_2m_max'] as List?;
       final tempMinList = daily['temperature_2m_min'] as List?;
+      final timeList = daily['time'] as List?;
+      final weatherCodeList = daily['weather_code'] as List?;
+
+      final List<ForecastDay> forecastDays = [];
+      if (timeList != null) {
+        for (int i = 0; i < timeList.length; i++) {
+          forecastDays.add(
+            ForecastDay(
+              date: DateTime.tryParse(timeList[i].toString()) ?? DateTime.now(),
+              min: (tempMinList?[i] as num?)?.toDouble() ?? 0.0,
+              max: (tempMaxList?[i] as num?)?.toDouble() ?? 0.0,
+              condition: _mapWmoCondition((weatherCodeList?[i] as num?)?.toInt() ?? 0),
+              uvIndex: 0,
+            ),
+          );
+        }
+      }
 
       final double tempMax = tempMaxList != null && tempMaxList.isNotEmpty
           ? (tempMaxList.first as num).toDouble()
@@ -95,6 +122,7 @@ class WeatherRepositoryImpl implements WeatherRepository {
         humidity: humidity,
         windSpeed: windSpeed,
         date: DateTime.now(),
+        forecast: forecastDays,
       );
     } catch (e) {
       throw Exception('Falha ao obter clima por coordenadas: $e');

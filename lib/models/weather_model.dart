@@ -1,6 +1,43 @@
 import 'dart:convert';
 
-/// Representa os dados meteorológicos de uma cidade
+/// Representa a previsão de um dia específico futuro
+class ForecastDay {
+  final DateTime date;
+  final double min;
+  final double max;
+  final String condition;
+  final int uvIndex;
+
+  ForecastDay({
+    required this.date,
+    required this.min,
+    required this.max,
+    required this.condition,
+    required this.uvIndex,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'date': date.toIso8601String(),
+      'min': min,
+      'max': max,
+      'condition': condition,
+      'uv_index': uvIndex,
+    };
+  }
+
+  factory ForecastDay.fromMap(Map<String, dynamic> map) {
+    return ForecastDay(
+      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(),
+      min: (map['min'] as num?)?.toDouble() ?? 0.0,
+      max: (map['max'] as num?)?.toDouble() ?? 0.0,
+      condition: map['condition'] ?? 'Desconhecido',
+      uvIndex: (map['uv_index'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+/// Representa os dados meteorológicos completos de uma cidade, incluindo a previsão dos próximos dias
 class WeatherData {
   final String cityName;
   final String stateName;
@@ -12,6 +49,7 @@ class WeatherData {
   final int humidity;
   final double windSpeed;
   final DateTime date;
+  final List<ForecastDay> forecast;
 
   WeatherData({
     required this.cityName,
@@ -24,9 +62,10 @@ class WeatherData {
     required this.humidity,
     required this.windSpeed,
     required this.date,
+    required this.forecast,
   });
 
-  /// Converte para Map (ideal para salvar em Banco de Dados)
+  /// Converte para Map (para persistência em Banco de Dados)
   Map<String, dynamic> toMap() {
     return {
       'city_name': cityName,
@@ -39,6 +78,7 @@ class WeatherData {
       'humidity': humidity,
       'wind_speed': windSpeed,
       'date': date.toIso8601String(),
+      'forecast': forecast.map((x) => x.toMap()).toList(),
     };
   }
 
@@ -47,14 +87,19 @@ class WeatherData {
     return WeatherData(
       cityName: map['city_name'] ?? '',
       stateName: map['state_name'] ?? '',
-      temp: (map['temp'] as num).toDouble(),
-      tempMin: (map['temp_min'] as num).toDouble(),
-      tempMax: (map['temp_max'] as num).toDouble(),
+      temp: (map['temp'] as num?)?.toDouble() ?? 0.0,
+      tempMin: (map['temp_min'] as num?)?.toDouble() ?? 0.0,
+      tempMax: (map['temp_max'] as num?)?.toDouble() ?? 0.0,
       condition: map['condition'] ?? '',
       description: map['description'] ?? '',
-      humidity: (map['humidity'] as num).toInt(),
-      windSpeed: (map['wind_speed'] as num).toDouble(),
-      date: DateTime.parse(map['date'] ?? DateTime.now().toIso8601String()),
+      humidity: (map['humidity'] as num?)?.toInt() ?? 0,
+      windSpeed: (map['wind_speed'] as num?)?.toDouble() ?? 0.0,
+      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(),
+      forecast: map['forecast'] != null
+          ? List<ForecastDay>.from(
+              (map['forecast'] as List).map((x) => ForecastDay.fromMap(Map<String, dynamic>.from(x))),
+            )
+          : [],
     );
   }
 

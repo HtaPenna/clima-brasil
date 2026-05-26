@@ -42,7 +42,7 @@ class WeatherApiService {
         'latitude': lat,
         'longitude': lon,
         'current': 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m',
-        'daily': 'temperature_2m_max,temperature_2m_min',
+        'daily': 'temperature_2m_max,temperature_2m_min,weather_code',
         'timezone': 'America/Sao_Paulo',
       },
     );

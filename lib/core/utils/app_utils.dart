@@ -22,4 +22,18 @@ class AppUtils {
     }
     return Icons.wb_cloudy_rounded;
   }
+
+  /// Retorna a abreviação do dia da semana (ex: Seg, Ter, Qua...)
+  static String getWeekdayAbbreviation(DateTime date) {
+    switch (date.weekday) {
+      case DateTime.monday: return 'Seg';
+      case DateTime.tuesday: return 'Ter';
+      case DateTime.wednesday: return 'Qua';
+      case DateTime.thursday: return 'Qui';
+      case DateTime.friday: return 'Sex';
+      case DateTime.saturday: return 'Sáb';
+      case DateTime.sunday: return 'Dom';
+      default: return '';
+    }
+  }
 }
