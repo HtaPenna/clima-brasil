@@ -1,0 +1,51 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom
+.buildlog
+.history
+.svn
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The Flutter/Dart SDK that is managed by Flutter Version Manager (FVM)
+.fvm/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.symlinks/
+**/ios/Pods/
+**/tool/.packages
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Android related
+**/android/app/gradlew
+**/android/app/gradlew.bat
+**/android/local.properties
+**/android/key.properties
+**/android/app/src/main/res/raw/
+*.jks
+*.keystore
+
+# Web related
+.dart_tool/chrome-device/
+
+# Supabase/Firebase Local Env files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
