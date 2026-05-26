@@ -5,12 +5,15 @@ import 'core/theme/app_theme.dart';
 import 'repositories/weather_repository.dart';
 import 'providers/weather_provider.dart';
 import 'screens/home_screen.dart';
+import 'services/http_service.dart';
+import 'services/weather_api_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Repositório Mock/Instância Inicial
-  final weatherRepository = WeatherRepositoryImpl();
+  final httpService = DioHttpService();
+  final apiService = WeatherApiService(httpService);
+  final weatherRepository = WeatherRepositoryImpl(apiService);
 
   runApp(
     MultiProvider(
