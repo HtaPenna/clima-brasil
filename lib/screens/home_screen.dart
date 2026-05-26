@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/weather_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/weather_card.dart';
 import '../widgets/forecast_card.dart';
 
@@ -49,6 +50,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: Icon(
+              context.watch<ThemeProvider>().isDarkMode
+                  ? Icons.wb_sunny_rounded
+                  : Icons.nightlight_round,
+            ),
+            tooltip: 'Alternar Tema',
+            onPressed: () {
+              context.read<ThemeProvider>().toggleTheme();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.my_location_rounded),
             tooltip: 'Usar Localização Atual (GPS)',
