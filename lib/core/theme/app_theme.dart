@@ -51,11 +51,7 @@ class AppTheme {
         bodyLarge: TextStyle(fontSize: 16, color: lightTextPrimary),
         bodyMedium: TextStyle(fontSize: 14, color: lightTextSecondary),
       ),
-<<<<<<< HEAD
       cardTheme: CardThemeData(
-=======
-      cardTheme: CardTheme(
->>>>>>> 8eab0b5b0bb0f12ade0dbffb2f84774f7fdaeb1e
         color: lightCard,
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

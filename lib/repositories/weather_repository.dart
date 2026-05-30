@@ -7,7 +7,7 @@ abstract class WeatherRepository {
   Future<WeatherData> getWeatherForLocation(double lat, double lon);
 }
 
-/// Implementação integrada com serviços de APIs reais (BrasilAPI/CPTEC e Open-Meteo)
+/// Implementação integrada com serviços de APIs reais (BrasilAPI e Open-Meteo)
 class WeatherRepositoryImpl implements WeatherRepository {
   final WeatherApiService _apiService;
 
@@ -16,52 +16,71 @@ class WeatherRepositoryImpl implements WeatherRepository {
   @override
   Future<WeatherData> getWeatherForCity(String city) async {
     try {
-      // 1. Pesquisa a cidade por nome para obter o ID (código CPTEC)
+      // 1. Pesquisa a cidade por nome na BrasilAPI (CPTEC) para obter o nome e estado oficiais
       final cities = await _apiService.searchCity(city);
       if (cities.isEmpty) {
         throw Exception('Nenhuma cidade encontrada com o nome "$city".');
       }
 
       final matchedCity = cities.first;
-      final int cityId = matchedCity['id'];
+      final String cityName = matchedCity['nome'] ?? city;
+      final String stateName = matchedCity['estado'] ?? 'BR';
 
-      // 2. Busca a previsão para o ID da cidade encontrada
-      final forecastData = await _apiService.getForecastByCityId(cityId);
-      final climaList = forecastData['clima'] as List?;
-      
-      if (climaList == null || climaList.isEmpty) {
-        throw Exception('Previsão indisponível no momento para esta localidade.');
+      // 2. Busca coordenadas da cidade usando a API do Open-Meteo
+      final coords = await _apiService.getCoordinates(cityName, stateName);
+      final double lat = coords['latitude']!;
+      final double lon = coords['longitude']!;
+
+      // 3. Consulta a API Open-Meteo usando essas coordenadas para obter clima atual e previsões
+      final weatherData = await _apiService.getWeatherByCoordinates(lat, lon);
+
+      final current = Map<String, dynamic>.from(weatherData['current'] ?? {});
+      final daily = Map<String, dynamic>.from(weatherData['daily'] ?? {});
+
+      final double temp = (current['temperature_2m'] as num?)?.toDouble() ?? 0.0;
+      final int humidity = (current['relative_humidity_2m'] as num?)?.toInt() ?? 0;
+      final double windSpeed = (current['wind_speed_10m'] as num?)?.toDouble() ?? 0.0;
+      final int weatherCode = (current['weather_code'] as num?)?.toInt() ?? 0;
+
+      final tempMaxList = daily['temperature_2m_max'] as List?;
+      final tempMinList = daily['temperature_2m_min'] as List?;
+      final timeList = daily['time'] as List?;
+      final weatherCodeList = daily['weather_code'] as List?;
+
+      final List<ForecastDay> forecastDays = [];
+      if (timeList != null) {
+        for (int i = 0; i < timeList.length; i++) {
+          forecastDays.add(
+            ForecastDay(
+              date: DateTime.tryParse(timeList[i].toString()) ?? DateTime.now(),
+              min: (tempMinList?[i] as num?)?.toDouble() ?? 0.0,
+              max: (tempMaxList?[i] as num?)?.toDouble() ?? 0.0,
+              condition: _mapWmoCondition((weatherCodeList?[i] as num?)?.toInt() ?? 0),
+              uvIndex: 0,
+            ),
+          );
+        }
       }
 
-      // Mapeia todas as previsões diárias
-      final List<ForecastDay> forecastDays = climaList.map((item) {
-        final map = Map<String, dynamic>.from(item);
-        return ForecastDay(
-          date: DateTime.tryParse(map['data'] ?? '') ?? DateTime.now(),
-          min: (map['min'] as num?)?.toDouble() ?? 0.0,
-          max: (map['max'] as num?)?.toDouble() ?? 0.0,
-          condition: _mapCptecCondition(map['condicao']),
-          uvIndex: (map['indice_uv'] as num?)?.toInt() ?? 0,
-        );
-      }).toList();
+      final double tempMax = tempMaxList != null && tempMaxList.isNotEmpty
+          ? (tempMaxList.first as num).toDouble()
+          : temp;
 
-      // Pega o primeiro dia da previsão como clima atual aproximado
-      final todayForecast = Map<String, dynamic>.from(climaList.first);
-      final double tempMin = (todayForecast['min'] as num).toDouble();
-      final double tempMax = (todayForecast['max'] as num).toDouble();
-      final double tempAverage = (tempMin + tempMax) / 2;
+      final double tempMin = tempMinList != null && tempMinList.isNotEmpty
+          ? (tempMinList.first as num).toDouble()
+          : temp;
 
       return WeatherData(
-        cityName: forecastData['cidade'] ?? matchedCity['nome'] ?? city,
-        stateName: forecastData['estado'] ?? matchedCity['estado'] ?? 'BR',
-        temp: tempAverage,
+        cityName: cityName,
+        stateName: stateName,
+        temp: temp,
         tempMin: tempMin,
         tempMax: tempMax,
-        condition: _mapCptecCondition(todayForecast['condicao']),
-        description: 'Índice UV máximo: ${todayForecast['indice_uv'] ?? "Não informado"}',
-        humidity: 60,
-        windSpeed: 12.0,
-        date: DateTime.tryParse(todayForecast['data'] ?? '') ?? DateTime.now(),
+        condition: _mapWmoCondition(weatherCode),
+        description: 'Clima atual e previsão de ${forecastDays.length} dias',
+        humidity: humidity,
+        windSpeed: windSpeed,
+        date: DateTime.now(),
         forecast: forecastDays,
       );
     } catch (e) {
@@ -126,24 +145,6 @@ class WeatherRepositoryImpl implements WeatherRepository {
       );
     } catch (e) {
       throw Exception('Falha ao obter clima por coordenadas: $e');
-    }
-  }
-
-  /// Mapeador de códigos climáticos da CPTEC/INPE
-  String _mapCptecCondition(String? code) {
-    switch (code?.toLowerCase()) {
-      case 'ec': return 'Encoberto';
-      case 'ci': return 'Chuvas Isoladas';
-      case 'cl': return 'Parcialmente Nublado';
-      case 'c': return 'Claro';
-      case 'ch': return 'Chuvoso';
-      case 't': return 'Tempestade';
-      case 'pn': return 'Parcialmente Nublado';
-      case 'pm': return 'Poucas Nuvens';
-      case 'np': return 'Pancadas de Chuva';
-      case 'n': return 'Nublado';
-      case 'pc': return 'Pancadas de Chuva';
-      default: return 'Tempo Instável';
     }
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:clima_brasil/core/utils/app_utils.dart';
+import 'package:clima_brasil/models/weather_model.dart';
 import '../providers/weather_provider.dart';
 import '../providers/theme_provider.dart';
 import '../widgets/weather_card.dart';

@@ -34,11 +34,21 @@ void main() {
       expect(forecast['clima'], isA<List>());
     });
 
+    test('Deve obter coordenadas para uma cidade do Brasil via Open-Meteo Geocoding', () async {
+      final coords = await apiService.getCoordinates('São Paulo', 'SP');
+      
+      expect(coords, isNotEmpty);
+      expect(coords['latitude'], closeTo(-23.5489, 1.0));
+      expect(coords['longitude'], closeTo(-46.6388, 1.0));
+    });
+
     test('Deve retornar previsão completa com histórico por cidade no Repositório', () async {
       final weather = await repository.getWeatherForCity('Sao Paulo');
       
       expect(weather.cityName, contains('São Paulo'));
       expect(weather.forecast, isNotEmpty);
+      // Garante que retorna previsões para múltiplos dias (no mínimo 7 dias do Open-Meteo)
+      expect(weather.forecast.length, greaterThanOrEqualTo(7));
       expect(weather.forecast.first.max, isNotNull);
     });
 
@@ -48,7 +58,7 @@ void main() {
       expect(weather.cityName, equals('Minha Localização'));
       expect(weather.temp, isA<double>());
       expect(weather.forecast, isNotEmpty);
-      expect(weather.forecast.length, greaterThan(1));
+      expect(weather.forecast.length, greaterThanOrEqualTo(7));
     });
   });
 }

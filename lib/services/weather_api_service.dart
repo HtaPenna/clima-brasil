@@ -52,4 +52,43 @@ class WeatherApiService {
     }
     throw Exception('Formato de resposta inválido ao buscar clima por coordenadas.');
   }
+
+  /// Busca coordenadas (latitude e longitude) de uma cidade por nome usando a API de Geocodificação do Open-Meteo
+  Future<Map<String, double>> getCoordinates(String cityName, String stateName) async {
+    final query = '$cityName, $stateName, Brasil';
+    final encodedQuery = Uri.encodeComponent(query);
+    final response = await _httpService.get(
+      'https://geocoding-api.open-meteo.com/v1/search?name=$encodedQuery&count=5&language=pt&format=json',
+    );
+
+    if (response.data is Map) {
+      final data = Map<String, dynamic>.from(response.data);
+      final results = data['results'] as List?;
+      if (results != null && results.isNotEmpty) {
+        final firstResult = Map<String, dynamic>.from(results.first);
+        final lat = (firstResult['latitude'] as num).toDouble();
+        final lon = (firstResult['longitude'] as num).toDouble();
+        return {'latitude': lat, 'longitude': lon};
+      }
+    }
+
+    // Fallback: busca apenas pelo nome da cidade se a busca completa com estado e país falhar
+    final encodedCity = Uri.encodeComponent(cityName);
+    final responseFallback = await _httpService.get(
+      'https://geocoding-api.open-meteo.com/v1/search?name=$encodedCity&count=5&language=pt&format=json',
+    );
+
+    if (responseFallback.data is Map) {
+      final data = Map<String, dynamic>.from(responseFallback.data);
+      final results = data['results'] as List?;
+      if (results != null && results.isNotEmpty) {
+        final firstResult = Map<String, dynamic>.from(results.first);
+        final lat = (firstResult['latitude'] as num).toDouble();
+        final lon = (firstResult['longitude'] as num).toDouble();
+        return {'latitude': lat, 'longitude': lon};
+      }
+    }
+
+    throw Exception('Coordenadas não encontradas para a cidade "$cityName, $stateName".');
+  }
 }
