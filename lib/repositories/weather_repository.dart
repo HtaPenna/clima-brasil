@@ -1,17 +1,21 @@
 import '../models/weather_model.dart';
 import '../services/weather_api_service.dart';
+import '../database/supabase_db.dart';
 
 /// Contrato para o repositório climático
 abstract class WeatherRepository {
   Future<WeatherData> getWeatherForCity(String city);
   Future<WeatherData> getWeatherForLocation(double lat, double lon);
+  Future<List<WeatherData>> getSavedSearches();
+  Future<void> saveWeatherSearch(WeatherData weather);
 }
 
 /// Implementação integrada com serviços de APIs reais (BrasilAPI e Open-Meteo)
 class WeatherRepositoryImpl implements WeatherRepository {
   final WeatherApiService _apiService;
+  final SupabaseDb _supabaseDb;
 
-  WeatherRepositoryImpl(this._apiService);
+  WeatherRepositoryImpl(this._apiService, this._supabaseDb);
 
   @override
   Future<WeatherData> getWeatherForCity(String city) async {
@@ -82,6 +86,8 @@ class WeatherRepositoryImpl implements WeatherRepository {
         windSpeed: windSpeed,
         date: DateTime.now(),
         forecast: forecastDays,
+        latitude: lat,
+        longitude: lon,
       );
     } catch (e) {
       throw Exception('Falha ao buscar dados climáticos para "$city": $e');
@@ -142,6 +148,8 @@ class WeatherRepositoryImpl implements WeatherRepository {
         windSpeed: windSpeed,
         date: DateTime.now(),
         forecast: forecastDays,
+        latitude: lat,
+        longitude: lon,
       );
     } catch (e) {
       throw Exception('Falha ao obter clima por coordenadas: $e');
@@ -158,5 +166,15 @@ class WeatherRepositoryImpl implements WeatherRepository {
     if (code >= 80 && code <= 82) return 'Pancadas de Chuva';
     if (code >= 95) return 'Tempestade';
     return 'Instável';
+  }
+
+  // Persist weather search to Supabase (or fallback)
+  Future<void> saveWeatherSearch(WeatherData weather) async {
+    await _supabaseDb.saveWeatherSearch(weather);
+  }
+
+  @override
+  Future<List<WeatherData>> getSavedSearches() async {
+    return await _supabaseDb.getSavedSearches();
   }
 }

@@ -50,6 +50,8 @@ class WeatherData {
   final double windSpeed;
   final DateTime date;
   final List<ForecastDay> forecast;
+  final double latitude;
+  final double longitude;
 
   WeatherData({
     required this.cityName,
@@ -63,6 +65,8 @@ class WeatherData {
     required this.windSpeed,
     required this.date,
     required this.forecast,
+    required this.latitude,
+    required this.longitude,
   });
 
   /// Converte para Map (para persistência em Banco de Dados)
@@ -79,6 +83,8 @@ class WeatherData {
       'wind_speed': windSpeed,
       'date': date.toIso8601String(),
       'forecast': forecast.map((x) => x.toMap()).toList(),
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -100,6 +106,8 @@ class WeatherData {
               (map['forecast'] as List).map((x) => ForecastDay.fromMap(Map<String, dynamic>.from(x))),
             )
           : [],
+      latitude: (map['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (map['longitude'] as num?)?.toDouble() ?? 0.0,
     );
   }
 

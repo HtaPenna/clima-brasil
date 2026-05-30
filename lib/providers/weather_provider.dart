@@ -6,7 +6,10 @@ import '../repositories/weather_repository.dart';
 class WeatherProvider extends ChangeNotifier {
   final WeatherRepository _repository;
 
-  WeatherProvider(this._repository);
+  WeatherProvider(this._repository) {
+    // Carrega histórico salvo ao iniciar
+    _loadSavedSearches();
+  }
 
   WeatherData? _currentWeather;
   WeatherData? get currentWeather => _currentWeather;
@@ -29,8 +32,11 @@ class WeatherProvider extends ChangeNotifier {
     try {
       final data = await _repository.getWeatherForCity(city);
       _currentWeather = data;
+
+      // Persistir a busca
+      await _repository.saveWeatherSearch(data);
       
-      // Adiciona ao histórico, evitando duplicidades de nome de cidade
+      // Atualiza histórico rápido
       _searchHistory.removeWhere((item) => item.cityName.toLowerCase() == data.cityName.toLowerCase());
       _searchHistory.insert(0, data);
       
@@ -52,10 +58,25 @@ class WeatherProvider extends ChangeNotifier {
     try {
       final data = await _repository.getWeatherForLocation(lat, lon);
       _currentWeather = data;
+
+      // Persistir a busca de localização (opcional)
+      await _repository.saveWeatherSearch(data);
     } catch (e) {
       _errorMessage = 'Falha ao buscar clima baseado na sua localização.';
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Carrega histórico salvo do Supabase/local
+  Future<void> _loadSavedSearches() async {
+    try {
+      final saved = await _repository.getSavedSearches();
+      _searchHistory.clear();
+      _searchHistory.addAll(saved.take(5));
+      notifyListeners();
+    } catch (e) {
+      // Ignora falhas silenciosamente; histórico ficará vazio.
     }
   }
 

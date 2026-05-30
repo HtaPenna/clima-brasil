@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/weather_model.dart';
 import '../core/utils/app_utils.dart';
 import '../core/theme/app_theme.dart';
-
+import '../screens/map_screen.dart';
 /// Card responsivo e moderno para exibição de dados climáticos
 class WeatherCard extends StatelessWidget {
   final WeatherData weather;
@@ -63,11 +63,32 @@ class WeatherCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                AppUtils.getWeatherIcon(weather.condition),
-                color: Colors.white,
-                size: 40,
-              ),
+               Row(
+                 children: [
+                   Icon(
+                     AppUtils.getWeatherIcon(weather.condition),
+                     color: Colors.white,
+                     size: 40,
+                   ),
+                   const SizedBox(width: 12),
+                   IconButton(
+                     icon: const Icon(Icons.map, color: Colors.white70),
+                     tooltip: 'Ver no mapa',
+                     onPressed: () {
+                       // Navigate to map screen with coordinates
+                       Navigator.of(context).push(
+                         MaterialPageRoute(
+                           builder: (_) => MapScreen(
+                             latitude: weather.latitude,
+                             longitude: weather.longitude,
+                             cityName: weather.cityName,
+                           ),
+                         ),
+                       );
+                     },
+                   ),
+                 ],
+               ),
             ],
           ),
           const SizedBox(height: 32),

@@ -9,6 +9,7 @@ import 'providers/theme_provider.dart';
 import 'screens/home_screen.dart';
 import 'services/http_service.dart';
 import 'services/weather_api_service.dart';
+import 'database/supabase_db.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +19,9 @@ void main() async {
   
   final httpService = DioHttpService();
   final apiService = WeatherApiService(httpService);
-  final weatherRepository = WeatherRepositoryImpl(apiService);
+  final supabaseDb = SupabaseDb();
+  await supabaseDb.initialize(prefs: prefs);
+  final weatherRepository = WeatherRepositoryImpl(apiService, supabaseDb);
 
   runApp(
     MultiProvider(
